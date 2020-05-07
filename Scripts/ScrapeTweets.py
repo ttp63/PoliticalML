@@ -8,8 +8,8 @@ import pandas as pd
 import os
 
 # Scraping Parameters
-start_date = "2019-12-15"
-end_date = "2020-01-01"
+start_date = "2020-04-23"
+end_date = "2020-04-26"
 max_tweet = 10000
 group = "sen"  # 'sen' or 'rep' (for now)
 obs = [
