@@ -137,6 +137,9 @@ dropped = base_df[base_df["text"].isna() & base_df["urls"].isna()]
 # df for base model
 simple_df = base_df[base_df["text"].notna()]
 
+# Replace missing null values for dirty vs clean demostration
+ml_df["text"] = ml_df["text"].fillna(value=".")
+
 #%% SPACY SETUP
 
 # Let's try spacy
@@ -279,14 +282,20 @@ sentence2 = "THis is a test sentance to see how SPACY works White Collar espn.co
 # %% MODEL TESTING
 import time
 
-ngrams = [(1, 1), (1, 2)]
-tokenizer_list = [["NTLK", nltk_tk_regexp], ["SPACY", spacy_tokenizer1]]
-model_list = [MultinomialNB(), RandomForestClassifier(), LogisticRegression()]
-rstates = [i for i in range(1, 3)]
-x_data = [["Clean", ml_df["clean_text"]], ["Dirty", ml_df["text"]]]
-vector_methods = ["Count", "TFIDF"]
+ngrams = [(1, 2)]  # (1, 1),
+tokenizer_list = [
+    ["NTLK", nltk_tk_regexp],
+    ["NTLK_tweet", nltk_tk_tweet],
+    ["SPACY", spacy_tokenizer1],
+]
+model_list = [LogisticRegression(), LogisticRegressionCV()]
+rstates = [i for i in range(10, 21)]
+x_data = [["Clean", ml_df["clean_text"]]]  # ["Dirty", ml_df["text"]],
+vector_methods = ["Count"]  # , "TFIDF"]
 
+results_name = "logistic_w_cv.csv"
 results_list = []
+
 total_len = (
     len(ngrams)
     * len(tokenizer_list)
@@ -383,7 +392,28 @@ for dataset in x_data:
                             + " models."
                         )
 t2 = time.time()
-print("Completed all models in " + str(round((t2 - t1), 2)) + " seconds.")
+print("Completed all models in " + str(round((t2 - t0), 2)) + " seconds.")
+
+results_df = pd.DataFrame(
+    results_list,
+    columns=[
+        "model",
+        "tokenizer",
+        "vectorizer",
+        "ngram",
+        "random_state",
+        "data_type",
+        "accuracy",
+        "dem_precision",
+        "rep_precision",
+        "dem_recall",
+        "rep_recall",
+        "null_accuracy",
+        "lift",
+    ],
+)
+
+results_df.to_csv("../Results/" + results_name)
 
 #%% SVD and Random Forest
 from sklearn.decomposition import TruncatedSVD
@@ -445,5 +475,43 @@ print(
 svd_t1 = time.time()
 print("Model Time:" + str(t1 - t0))
 
+
+# %% VISUALIZATION TIME
+
+class_comp_df = pd.read_csv("../Results/classifier_comp.csv")
+
+class_sum_df = (
+    class_comp_df.groupby(["model", "tokenizer", "vectorizer", "ngram", "data_type"])
+    .agg(
+        {
+            "accuracy": "mean",
+            "null_accuracy": "mean",
+            "lift": "mean",
+            "dem_precision": "mean",
+            "rep_precision": "mean",
+            "dem_recall": "mean",
+            "rep_recall": "mean",
+        }
+    )
+    .reset_index()
+)
+
+nbvlog_df = pd.read_csv("../Results/nb_v_logistic.csv")
+
+nbvlog_sum_df = (
+    nbvlog_df.groupby(["model", "tokenizer", "vectorizer", "ngram", "data_type"])
+    .agg(
+        {
+            "accuracy": "mean",
+            "null_accuracy": "mean",
+            "lift": "mean",
+            "dem_precision": "mean",
+            "rep_precision": "mean",
+            "dem_recall": "mean",
+            "rep_recall": "mean",
+        }
+    )
+    .reset_index()
+)
 
 # %%
