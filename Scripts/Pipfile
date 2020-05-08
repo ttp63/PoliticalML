@@ -13,6 +13,8 @@ spacy = "*"
 pandas = "*"
 jupyter = "*"
 vadersentiment = "*"
+matplotlib = "*"
+eli5 = "*"
 
 [requires]
 python_version = "3.8"
